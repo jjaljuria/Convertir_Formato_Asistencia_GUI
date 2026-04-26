@@ -4,7 +4,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 // Custom APIs for renderer
 const api = {
   // Enviamos la ruta del archivo y esperamos que Main nos diga si todo ok
-  procesarArchivo: (path: string) => ipcRenderer.invoke('procesar-archivo', path),
+  procesarArchivo: (file: File) => ipcRenderer.invoke('procesar-archivo', file),
   // Para elegir dónde guardar
   seleccionarDestino: (nombreSugerido: string) =>
     ipcRenderer.invoke('seleccionar-destino', nombreSugerido)

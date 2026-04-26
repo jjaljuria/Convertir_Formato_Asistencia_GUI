@@ -1,0 +1,28 @@
+.container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropZone {
+  border: 2px dashed #ccc;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  width: 30rem;
+  height: 20rem;
+  cursor: pointer;
+}
+
+.hasFile{
+    border-color: #4caf50;
+    background: #f0fff4;
+}
+
+/* emoji on its own line and larger */
+.emoji {
+  font-size: 2.5rem; /* ajusta el tamaño */
+  line-height: 1;
+  margin-top: 0.25rem;
+}

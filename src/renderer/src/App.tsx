@@ -1,34 +1,63 @@
 import Versions from './components/Versions'
 import electronLogo from './assets/electron.svg'
+import { useState } from 'react'
+import styles from './App.module.css'
 
 function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+  const [file, setFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
 
+  const handleDrop = async (e: React.DragEvent): Promise<void> => {
+    e.preventDefault()
+    const droppedFile = e.dataTransfer.files[0]
+    if ((droppedFile && droppedFile.name.endsWith('.xls')) || droppedFile.name.endsWith('.xlsx')) {
+      setFile(droppedFile)
+      console.log('Archivo:', droppedFile.name)
+    } else {
+      alert('Por favor, suelta un archivo Excel válido (.xls o .xlsx)')
+    }
+  }
+
+  const handleProcess = async (): Promise<void> => {
+    if (!file) return
+    setLoading(true)
+    try {
+      // Llamamos al Main a través del preload
+      await window.api.procesarArchivo(file)
+      alert('Archivo procesado con éxito')
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
-    <>
+    <div className={styles.container}>
       <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
+      <div
+        className={[styles.dropZone, file && styles.hasFile].filter(Boolean).join(' ')}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+      >
+        {file ? (
+          `Archivo listo: ${file.name} ✅`
+        ) : (
+          <>
+            <div>Arrastra tu archivo de asistencia aquí</div>
+            <div className={styles.emoji} aria-hidden>
+              👇
+            </div>
+          </>
+        )}
       </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
+
+      {file && (
+        <button onClick={handleProcess} disabled={loading}>
+          {loading ? 'Procesando...' : 'Generar Reporte'}
+        </button>
+      )}
       <Versions></Versions>
-    </>
+    </div>
   )
 }
 
