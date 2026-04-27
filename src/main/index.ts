@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import convertirAsistencia from 'convertir-formato-asistencia'
 
 function createWindow(): void {
   // Create the browser window.
@@ -73,9 +74,16 @@ app.on('window-all-closed', () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
-ipcMain.handle('procesar-archivo', async (_event, filePath: string) => {
-  console.log('Archivo recibido en Main:', filePath)
+ipcMain.handle('procesar-archivo', async (_event, inputPath: string) => {
+  console.log('Archivo recibido en Main:', inputPath)
+
+  const { filePath: outputPath } = await dialog.showSaveDialog({
+    title: 'Seleccionar destino para el reporte',
+    filters: [{ name: 'Archivos Excel', extensions: ['xlsx'] }]
+  })
+
   // Aquí puedes procesar el archivo usando la ruta (fs, xlsx, etc.)
+  await convertirAsistencia.generarReporte(inputPath, outputPath)
   return { success: true }
 })
 
