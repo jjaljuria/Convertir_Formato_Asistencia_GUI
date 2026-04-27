@@ -10,7 +10,7 @@ function App(): React.JSX.Element {
   const handleDrop = async (e: React.DragEvent): Promise<void> => {
     e.preventDefault()
     const droppedFile = e.dataTransfer.files[0]
-    if ((droppedFile && droppedFile.name.endsWith('.xls')) || droppedFile.name.endsWith('.xlsx')) {
+    if (droppedFile && (droppedFile.name.endsWith('.xls') || droppedFile.name.endsWith('.xlsx'))) {
       setFile(droppedFile)
       console.log('Archivo:', droppedFile.name)
     } else {
@@ -22,8 +22,14 @@ function App(): React.JSX.Element {
     if (!file) return
     setLoading(true)
     try {
-      // Llamamos al Main a través del preload
-      await window.api.procesarArchivo(file)
+      // obtener la ruta real que provee Electron y enviarla al Main
+      const filePath = await window.api.getFilePath(file)
+      if (!filePath) {
+        alert('No se encontró la ruta del archivo en el objeto File.')
+        setLoading(false)
+        return
+      }
+      await window.api.procesarArchivo(filePath)
       alert('Archivo procesado con éxito')
     } catch (error) {
       console.error(error)

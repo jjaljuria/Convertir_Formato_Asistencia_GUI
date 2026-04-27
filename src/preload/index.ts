@@ -1,13 +1,14 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
 const api = {
   // Enviamos la ruta del archivo y esperamos que Main nos diga si todo ok
-  procesarArchivo: (file: File) => ipcRenderer.invoke('procesar-archivo', file),
+  procesarArchivo: (path: string) => ipcRenderer.invoke('procesar-archivo', path),
   // Para elegir dónde guardar
   seleccionarDestino: (nombreSugerido: string) =>
-    ipcRenderer.invoke('seleccionar-destino', nombreSugerido)
+    ipcRenderer.invoke('seleccionar-destino', nombreSugerido),
+  getFilePath: (file: File) => webUtils.getPathForFile(file)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -5,7 +5,8 @@ declare global {
     electron: ElectronAPI
     api: {
       seleccionarDestino: (nombre: string) => Promise<string | undefined>
-      procesarArchivo: (file: File) => Promise<{ success: boolean }>
+      procesarArchivo: (path: string) => Promise<{ success: boolean }>
+      getFilePath: (file: File) => Promise<string>
     }
   }
 }

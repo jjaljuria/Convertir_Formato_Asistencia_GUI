@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -72,3 +72,19 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+ipcMain.handle('procesar-archivo', async (_event, filePath: string) => {
+  console.log('Archivo recibido en Main:', filePath)
+  // Aquí puedes procesar el archivo usando la ruta (fs, xlsx, etc.)
+  return { success: true }
+})
+
+ipcMain.handle('seleccionar-destino', async (_event, nombreSugerido: string) => {
+  const { filePath } = await dialog.showSaveDialog({
+    title: 'Seleccionar destino para el reporte',
+    defaultPath: nombreSugerido,
+    filters: [{ name: 'Archivos Excel', extensions: ['xlsx'] }]
+  })
+
+  return filePath
+})
