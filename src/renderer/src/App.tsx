@@ -58,7 +58,7 @@ function App(): React.JSX.Element {
       </div>
 
       {file && (
-        <button onClick={handleProcess} disabled={loading}>
+        <button onClick={handleProcess} disabled={loading} className={styles.processButton}>
           {loading ? 'Procesando...' : 'Generar Reporte'}
         </button>
       )}
