@@ -1,5 +1,5 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
-import { join } from 'path'
+import { join, dirname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import convertirAsistencia from 'convertir-formato-asistencia'
@@ -79,7 +79,8 @@ ipcMain.handle('procesar-archivo', async (_event, inputPath: string) => {
 
   const { filePath: outputPath } = await dialog.showSaveDialog({
     title: 'Seleccionar destino para el reporte',
-    filters: [{ name: 'Archivos Excel', extensions: ['xlsx'] }]
+    filters: [{ name: 'Archivos Excel', extensions: ['xlsx'] }],
+    defaultPath: join(dirname(inputPath))
   })
 
   // Aquí puedes procesar el archivo usando la ruta (fs, xlsx, etc.)
