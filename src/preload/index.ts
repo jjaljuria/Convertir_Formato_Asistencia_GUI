@@ -5,9 +5,6 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   // Enviamos la ruta del archivo y esperamos que Main nos diga si todo ok
   procesarArchivo: (path: string) => ipcRenderer.invoke('procesar-archivo', path),
-  // Para elegir dónde guardar
-  seleccionarDestino: (nombreSugerido: string) =>
-    ipcRenderer.invoke('seleccionar-destino', nombreSugerido),
   getFilePath: (file: File) => webUtils.getPathForFile(file)
 }
 

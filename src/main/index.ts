@@ -88,13 +88,3 @@ ipcMain.handle('procesar-archivo', async (_event, inputPath: string) => {
   await convertirAsistencia.generarReporte(inputPath, fullpath)
   return { success: true }
 })
-
-ipcMain.handle('seleccionar-destino', async (_event, nombreSugerido: string) => {
-  const { filePath } = await dialog.showSaveDialog({
-    title: 'Seleccionar destino para el reporte',
-    defaultPath: nombreSugerido,
-    filters: [{ name: 'Archivos Excel', extensions: ['xlsx'] }]
-  })
-
-  return filePath
-})
