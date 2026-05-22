@@ -83,7 +83,8 @@ ipcMain.handle('procesar-archivo', async (_event, inputPath: string) => {
   })
 
   // Aquí puedes procesar el archivo usando la ruta (fs, xlsx, etc.)
-  await convertirAsistencia.generarReporte(inputPath, outputPath)
+  const fullpath = outputPath + '.xlsx'
+  await convertirAsistencia.generarReporte(inputPath, fullpath)
   return { success: true }
 })
 
