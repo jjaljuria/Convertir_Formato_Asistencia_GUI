@@ -29,8 +29,10 @@ function App(): React.JSX.Element {
         setLoading(false)
         return
       }
-      await window.api.procesarArchivo(filePath)
-      alert('Archivo procesado con éxito')
+      const { success } = await window.api.procesarArchivo(filePath)
+      if (success) {
+        alert('Archivo procesado con éxito')
+      }
     } catch (error) {
       console.error(error)
     } finally {

@@ -77,14 +77,17 @@ app.on('window-all-closed', () => {
 ipcMain.handle('procesar-archivo', async (_event, inputPath: string) => {
   console.log('Archivo recibido en Main:', inputPath)
 
-  const { filePath: outputPath } = await dialog.showSaveDialog({
+  const { filePath: outputPath, canceled } = await dialog.showSaveDialog({
     title: 'Seleccionar destino para el reporte',
     filters: [{ name: 'Archivos Excel', extensions: ['xlsx'] }],
     defaultPath: join(dirname(inputPath))
   })
 
-  // Aquí puedes procesar el archivo usando la ruta (fs, xlsx, etc.)
-  const fullpath = outputPath + '.xlsx'
-  await convertirAsistencia.generarReporte(inputPath, fullpath)
-  return { success: true }
+  if (outputPath && !canceled) {
+    // Aquí puedes procesar el archivo usando la ruta (fs, xlsx, etc.)
+    const fullpath = outputPath + '.xlsx'
+    await convertirAsistencia.generarReporte(inputPath, fullpath)
+    return { success: true }
+  }
+  return { success: false, canceled: true }
 })
