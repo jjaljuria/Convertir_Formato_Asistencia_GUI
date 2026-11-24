@@ -1,8 +1,8 @@
-.container{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .dropZone {
@@ -15,9 +15,9 @@
   cursor: pointer;
 }
 
-.hasFile{
-    border-color: #4caf50;
-    background: #8e938f40;
+.hasFile {
+  border-color: #4caf50;
+  background: #8e938f40;
 }
 
 /* emoji on its own line and larger */

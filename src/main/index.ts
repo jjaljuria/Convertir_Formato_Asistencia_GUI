@@ -1,22 +1,113 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
-import { join, dirname } from 'path'
+import { app, shell, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
+import { copyFile, mkdir, readFile, rename, rm, writeFile } from 'fs/promises'
+import { existsSync } from 'fs'
+import { join, dirname, extname } from 'path'
+import { randomUUID } from 'crypto'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import convertirAsistencia from 'convertir-formato-asistencia'
 
+function getPersonalDirectory(): string {
+  return join(app.getPath('userData'), 'personal')
+}
+
+async function obtenerRutaPersonal(): Promise<string | undefined> {
+  const personalDirectory = getPersonalDirectory()
+  const manifestPath = join(personalDirectory, 'actual')
+
+  if (!existsSync(manifestPath)) return undefined
+
+  const fileName = (await readFile(manifestPath, 'utf8')).trim()
+  if (!/^personal-[\da-f-]+\.(xls|xlsx)$/i.test(fileName)) {
+    throw new Error('El registro del archivo de personal no es válido.')
+  }
+
+  const filePath = join(personalDirectory, fileName)
+  return existsSync(filePath) ? filePath : undefined
+}
+
+async function agregarArchivoPersonal(): Promise<void> {
+  const { filePaths, canceled } = await dialog.showOpenDialog({
+    title: 'Seleccionar archivo de personal',
+    properties: ['openFile'],
+    filters: [{ name: 'Archivos Excel', extensions: ['xls', 'xlsx'] }]
+  })
+
+  if (canceled || filePaths.length === 0) return
+
+  const sourcePath = filePaths[0]
+  const extension = extname(sourcePath).toLowerCase()
+  if (extension !== '.xls' && extension !== '.xlsx') {
+    dialog.showErrorBox('Archivo no válido', 'Selecciona un archivo Excel .xls o .xlsx.')
+    return
+  }
+
+  const personalDirectory = getPersonalDirectory()
+  const manifestPath = join(personalDirectory, 'actual')
+  const previousPath = await obtenerRutaPersonal()
+  const fileName = `personal-${randomUUID()}${extension}`
+  const filePath = join(personalDirectory, fileName)
+  const temporaryManifestPath = join(personalDirectory, `actual-${randomUUID()}.tmp`)
+
+  await mkdir(personalDirectory, { recursive: true })
+
+  try {
+    await copyFile(sourcePath, filePath)
+    await writeFile(temporaryManifestPath, fileName, 'utf8')
+    await rename(temporaryManifestPath, manifestPath)
+  } catch (error) {
+    await rm(filePath, { force: true })
+    await rm(temporaryManifestPath, { force: true })
+    throw error
+  }
+
+  if (previousPath && previousPath !== filePath) {
+    try {
+      await rm(previousPath)
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error)
+      dialog.showErrorBox(
+        'Personal guardado con advertencia',
+        `El nuevo archivo quedó guardado, pero no se pudo eliminar la copia anterior: ${detail}`
+      )
+    }
+  }
+}
+
+const template = [
+  {
+    label: 'Personal',
+    submenu: [
+      {
+        label: 'Agregar',
+        click: () => {
+          void agregarArchivoPersonal().catch((error: unknown) => {
+            const detail = error instanceof Error ? error.message : String(error)
+            dialog.showErrorBox('No se pudo agregar el archivo de personal', detail)
+          })
+        }
+      }
+    ]
+  }
+]
+
 function createWindow(): void {
+  const menu = Menu.buildFromTemplate(template)
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
+
+  mainWindow.setMenu(menu)
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -86,7 +177,12 @@ ipcMain.handle('procesar-archivo', async (_event, inputPath: string) => {
   if (outputPath && !canceled) {
     // Aquí puedes procesar el archivo usando la ruta (fs, xlsx, etc.)
     const fullpath = outputPath + '.xlsx'
-    await convertirAsistencia.generarReporte(inputPath, fullpath)
+    const rutaPersonal = await obtenerRutaPersonal()
+    if (rutaPersonal) {
+      await convertirAsistencia.generarReporte(inputPath, fullpath, {}, rutaPersonal)
+    } else {
+      await convertirAsistencia.generarReporte(inputPath, fullpath)
+    }
     return { success: true }
   }
   return { success: false, canceled: true }
