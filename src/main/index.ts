@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, Menu, MenuItem } from 'electron'
 import { copyFile, mkdir, readFile, rename, rm, writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join, dirname, extname } from 'path'
@@ -72,6 +72,47 @@ async function agregarArchivoPersonal(): Promise<void> {
       )
     }
   }
+
+  await actualizarEstadoEliminarPersonal()
+}
+
+let eliminarPersonalMenuItem: MenuItem | undefined
+
+async function actualizarEstadoEliminarPersonal(): Promise<void> {
+  if (!eliminarPersonalMenuItem) return
+
+  try {
+    eliminarPersonalMenuItem.enabled = Boolean(await obtenerRutaPersonal())
+  } catch (error) {
+    eliminarPersonalMenuItem.enabled = false
+    const detail = error instanceof Error ? error.message : String(error)
+    dialog.showErrorBox('No se pudo verificar el archivo de personal', detail)
+  }
+}
+
+async function eliminarArchivoPersonal(): Promise<void> {
+  const personalPath = await obtenerRutaPersonal()
+  if (!personalPath) {
+    await actualizarEstadoEliminarPersonal()
+    return
+  }
+
+  const { response } = await dialog.showMessageBox({
+    type: 'warning',
+    buttons: ['Cancelar', 'Eliminar'],
+    defaultId: 0,
+    cancelId: 0,
+    title: 'Eliminar archivo de personal',
+    message: '¿Quieres eliminar el archivo de personal actual?',
+    detail: 'Esta acción no se puede deshacer.'
+  })
+
+  if (response !== 1) return
+
+  const manifestPath = join(getPersonalDirectory(), 'actual')
+  await rm(personalPath, { force: true })
+  await rm(manifestPath, { force: true })
+  await actualizarEstadoEliminarPersonal()
 }
 
 const template = [
@@ -86,6 +127,16 @@ const template = [
             dialog.showErrorBox('No se pudo agregar el archivo de personal', detail)
           })
         }
+      },
+      {
+        label: 'Eliminar',
+        enabled: false,
+        click: () => {
+          void eliminarArchivoPersonal().catch((error: unknown) => {
+            const detail = error instanceof Error ? error.message : String(error)
+            dialog.showErrorBox('No se pudo eliminar el archivo de personal', detail)
+          })
+        }
       }
     ]
   }
@@ -93,6 +144,8 @@ const template = [
 
 function createWindow(): void {
   const menu = Menu.buildFromTemplate(template)
+  eliminarPersonalMenuItem = menu.items[0]?.submenu?.items[1]
+  void actualizarEstadoEliminarPersonal()
 
   // Create the browser window.
   const mainWindow = new BrowserWindow({
